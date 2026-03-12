@@ -28,18 +28,25 @@ import { ReportsModule } from './modules/reports/reports.module';
     // Database
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('DATABASE_URL', 'postgresql://simplenow:simplenow@localhost:5432/simplenow'),
-        autoLoadEntities: true,
-        synchronize: configService.get<string>('NODE_ENV') !== 'production',
-        logging: configService.get<string>('NODE_ENV') === 'development',
-        ssl: configService.get<string>('NODE_ENV') === 'production'
-          ? { rejectUnauthorized: false }
-          : false,
-        retryAttempts: 5,
-        retryDelay: 3000,
-      }),
+      useFactory: (configService: ConfigService) => {
+        // Strip channel_binding param — pg npm driver doesn't support it
+        let dbUrl = configService.get<string>(
+          'DATABASE_URL',
+          'postgresql://simplenow:simplenow@localhost:5432/simplenow',
+        );
+        dbUrl = dbUrl.replace(/[&?]channel_binding=[^&]*/g, '');
+        const isProduction = configService.get<string>('NODE_ENV') === 'production';
+        return {
+          type: 'postgres' as const,
+          url: dbUrl,
+          autoLoadEntities: true,
+          synchronize: !isProduction,
+          logging: !isProduction,
+          ssl: isProduction ? { rejectUnauthorized: false } : false,
+          retryAttempts: 10,
+          retryDelay: 3000,
+        };
+      },
       inject: [ConfigService],
     }),
 
