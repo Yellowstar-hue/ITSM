@@ -3,14 +3,14 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy ALL workspace package manifests so npm can resolve the full workspace graph
-COPY package*.json ./
+COPY package.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
 COPY apps/frontend/package.json ./apps/frontend/
 
-# Install ALL deps (including devDeps needed for nest build)
-# npm workspaces requires all workspace package.json files to be present
-RUN npm ci --include=dev
+# Install ALL deps including devDeps (needed for nest build / tsc)
+# Use npm install (not npm ci) since there is no package-lock.json
+RUN npm install
 
 # Copy only API and shared source — frontend is NOT needed for this service
 COPY packages/shared/ ./packages/shared/
