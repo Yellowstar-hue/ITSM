@@ -1,0 +1,11 @@
+.git
+node_modules
+apps/frontend
+apps/api/node_modules
+apps/api/dist
+packages/shared/node_modules
+*.md
+.env*
+docker
+docs
+k8s
