@@ -1,11 +1,24 @@
 .git
 node_modules
-apps/frontend
+
+# Frontend source not needed (we only build the API)
+# but keep apps/frontend/package.json for npm workspace resolution
+apps/frontend/src
+apps/frontend/.next
+apps/frontend/node_modules
+apps/frontend/public
+apps/frontend/Dockerfile
+
+# API artifacts
 apps/api/node_modules
 apps/api/dist
+
+# Shared artifacts
 packages/shared/node_modules
-*.md
+
+# Other
 .env*
 docker
 docs
 k8s
+*.md
