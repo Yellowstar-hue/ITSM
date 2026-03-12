@@ -1,0 +1,39 @@
+version: '3.9'
+
+# Development override - only infrastructure services
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: simplenow-postgres-dev
+    environment:
+      POSTGRES_DB: simplenow
+      POSTGRES_USER: simplenow
+      POSTGRES_PASSWORD: simplenow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U simplenow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: simplenow-redis-dev
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+
+  # Adminer for DB management
+  adminer:
+    image: adminer
+    container_name: simplenow-adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_dev_data:

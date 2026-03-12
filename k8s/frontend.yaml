@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simplenow-frontend
+  namespace: simplenow
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: simplenow-frontend
+  template:
+    metadata:
+      labels:
+        app: simplenow-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: simplenow/frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "https://api.simplenow.io"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simplenow-frontend
+  namespace: simplenow
+spec:
+  selector:
+    app: simplenow-frontend
+  ports:
+  - port: 3000
+    targetPort: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: simplenow-ingress
+  namespace: simplenow
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  tls:
+  - hosts:
+    - simplenow.io
+    - api.simplenow.io
+    secretName: simplenow-tls
+  rules:
+  - host: simplenow.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: simplenow-frontend
+            port:
+              number: 3000
+  - host: api.simplenow.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: simplenow-api
+            port:
+              number: 3001
