@@ -37,6 +37,8 @@ import { ReportsModule } from './modules/reports/reports.module';
         ssl: configService.get<string>('NODE_ENV') === 'production'
           ? { rejectUnauthorized: false }
           : false,
+        retryAttempts: 5,
+        retryDelay: 3000,
       }),
       inject: [ConfigService],
     }),
