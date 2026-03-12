@@ -1,0 +1,13 @@
+{
+  "name": "@simplenow/shared",
+  "version": "1.0.0",
+  "description": "Shared types, constants, and utilities for SimpleNow ITSM",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

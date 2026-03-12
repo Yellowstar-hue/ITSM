@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Bell, Plus, Moon, Sun, ChevronDown } from 'lucide-react'
+import { Search, Bell, Plus, Moon, Sun, ChevronDown, X } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -9,14 +9,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useAuthStore } from '@/store/auth.store'
 import { useUIStore } from '@/store/ui.store'
 import { getInitials } from '@/lib/utils'
+import { useNotifications } from '@/hooks/use-notifications'
+import { NotificationsPanel } from '@/components/notifications/notifications-panel'
 import Link from 'next/link'
 import { useHotkeys } from 'react-hotkeys-hook'
-import { toast } from 'sonner'
 
 export function Header() {
   const { user, logout } = useAuthStore()
   const { setCommandPaletteOpen } = useUIStore()
   const { theme, setTheme } = useTheme()
+  const { unreadCount } = useNotifications()
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   useHotkeys('meta+k, ctrl+k', (e) => {
     e.preventDefault()
@@ -72,12 +75,27 @@ export function Header() {
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon-sm" className="relative" asChild>
-          <Link href="/settings">
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="relative"
+            onClick={() => setNotificationsOpen((v) => !v)}
+          >
             <Bell className="w-4 h-4" />
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive rounded-full text-[9px] font-bold text-white flex items-center justify-center">3</span>
-          </Link>
-        </Button>
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-destructive rounded-full text-[9px] font-bold text-white flex items-center justify-center px-0.5">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </Button>
+
+          {notificationsOpen && (
+            <div className="absolute right-0 top-10 w-80 max-h-[500px] border border-border rounded-xl shadow-xl bg-background overflow-hidden z-50 flex flex-col">
+              <NotificationsPanel onClose={() => setNotificationsOpen(false)} />
+            </div>
+          )}
+        </div>
 
         {/* User menu */}
         <DropdownMenu>
