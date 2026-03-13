@@ -93,4 +93,7 @@ async function bootstrap() {
   logger.log(`Environment: ${nodeEnv}`);
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Fatal startup error:', err);
+  process.exit(1);
+});

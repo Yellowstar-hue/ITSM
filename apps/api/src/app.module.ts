@@ -29,22 +29,24 @@ import { ReportsModule } from './modules/reports/reports.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        // Strip channel_binding param — pg npm driver doesn't support it
         let dbUrl = configService.get<string>(
           'DATABASE_URL',
           'postgresql://simplenow:simplenow@localhost:5432/simplenow',
         );
-        dbUrl = dbUrl.replace(/[&?]channel_binding=[^&]*/g, '');
-        const isProduction = configService.get<string>('NODE_ENV') === 'production';
+        // Strip channel_binding — pg npm driver doesn't support it (Neon-specific param)
+        dbUrl = dbUrl.replace(/([&?])channel_binding=[^&]*/g, '$1').replace(/[?&]$/, '');
+        // Detect remote DB (not localhost) to enforce SSL
+        const isRemote = !dbUrl.includes('localhost') && !dbUrl.includes('127.0.0.1');
         return {
           type: 'postgres' as const,
           url: dbUrl,
           autoLoadEntities: true,
-          synchronize: !isProduction,
-          logging: !isProduction,
-          ssl: isProduction ? { rejectUnauthorized: false } : false,
-          retryAttempts: 10,
-          retryDelay: 3000,
+          synchronize: true,
+          logging: false,
+          ssl: isRemote ? { rejectUnauthorized: false } : false,
+          retryAttempts: 15,
+          retryDelay: 5000,
+          connectTimeoutMS: 30000,
         };
       },
       inject: [ConfigService],
