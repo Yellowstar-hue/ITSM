@@ -15,12 +15,14 @@ COPY packages/shared/ ./packages/shared/
 COPY apps/frontend/ ./apps/frontend/
 
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
 
 RUN npm run build --workspace=apps/frontend
 
 EXPOSE 3000
 
+ENV NODE_ENV=production
+ENV PATH=/app/node_modules/.bin:$PATH
+
 WORKDIR /app/apps/frontend
 
-CMD ["/app/node_modules/.bin/next", "start", "-p", "3000"]
+CMD ["next", "start", "-p", "3000"]
