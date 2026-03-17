@@ -2,22 +2,25 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Only install API dependencies — no workspace complexity
-COPY apps/api/package.json ./package.json
+# Copy workspace manifests
+COPY package.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/frontend/package.json ./apps/frontend/
 
+# Install all deps (next is in dependencies, not devDeps — hoisted to /app/node_modules/.bin/next)
 RUN npm install
 
-# Copy API source
-COPY apps/api/ ./
+# Copy source
+COPY packages/shared/ ./packages/shared/
+COPY apps/frontend/ ./apps/frontend/
 
-# Build (transpileOnly skips type checking, so this never fails on TS errors)
-RUN npx nest build
-
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-EXPOSE 3001
+RUN npm run build --workspace=apps/frontend
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
-  CMD wget -qO- http://localhost:3001/api/health || exit 1
+EXPOSE 3000
 
-CMD ["node", "dist/main"]
+WORKDIR /app/apps/frontend
+
+CMD ["/app/node_modules/.bin/next", "start", "-p", "3000"]
