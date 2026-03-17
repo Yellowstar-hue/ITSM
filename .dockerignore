@@ -1,12 +1,9 @@
 .git
 node_modules
 
-# Frontend source not needed (we only build the API)
-# but keep apps/frontend/package.json for npm workspace resolution
-apps/frontend/src
+# Exclude build artifacts and local installs — source files are needed
 apps/frontend/.next
 apps/frontend/node_modules
-apps/frontend/public
 apps/frontend/Dockerfile
 
 # API artifacts
