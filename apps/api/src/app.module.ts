@@ -16,6 +16,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { SeederModule } from './database/seeder.module';
 
 @Module({
   imports: [
@@ -85,6 +86,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     CatalogModule,
     IntegrationsModule,
     ReportsModule,
+    SeederModule,
   ],
   controllers: [HealthController],
 })
