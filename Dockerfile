@@ -25,4 +25,4 @@ ENV PATH=/app/node_modules/.bin:$PATH
 
 WORKDIR /app/apps/frontend
 
-CMD ["next", "start", "-p", "3000"]
+CMD ["/app/node_modules/.bin/next", "start", "-p", "3000"]
