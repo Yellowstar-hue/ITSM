@@ -16,6 +16,8 @@ async function bootstrap() {
   const port = configService.get<number>('PORT', 3001);
   const frontendUrl = configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+  const extraOrigins = (configService.get<string>('CORS_ORIGINS', '') || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
 
   // Security
   app.use(helmet({
@@ -28,7 +30,14 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: [frontendUrl, 'http://localhost:3000', 'http://localhost:3001'],
+    origin: (origin, callback) => {
+      const allowed = [frontendUrl, 'http://localhost:3000', 'http://localhost:3001', ...extraOrigins];
+      if (!origin || allowed.includes(origin) || origin.endsWith('.railway.app')) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
