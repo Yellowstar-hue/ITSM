@@ -17,10 +17,13 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.userRepository.findOne({
-      where: { email, isActive: true },
-      select: ['id', 'email', 'firstName', 'lastName', 'role', 'passwordHash', 'department', 'avatar', 'isActive'],
-    });
+    // Use QueryBuilder with addSelect to reliably fetch the select:false passwordHash column
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.email = :email', { email })
+      .andWhere('user.isActive = :isActive', { isActive: true })
+      .getOne();
     if (!user) return null;
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) return null;

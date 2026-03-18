@@ -26,7 +26,9 @@ export class SeederService implements OnApplicationBootstrap {
     try {
       const userCount = await this.userRepo.count();
       if (userCount > 0) {
-        this.logger.log('Database already seeded, skipping.');
+        // Always ensure demo passwords are correct even on existing databases
+        await this.resetDemoPasswords();
+        this.logger.log('Database already seeded. Demo passwords reset to admin123.');
         return;
       }
       this.logger.log('Empty database detected. Seeding demo data...');
@@ -34,6 +36,20 @@ export class SeederService implements OnApplicationBootstrap {
       this.logger.log('Database seeded successfully!');
     } catch (err) {
       this.logger.error('Seeding failed:', err);
+    }
+  }
+
+  private async resetDemoPasswords() {
+    const pwHash = await bcrypt.hash('admin123', 12);
+    const demoEmails = [
+      'admin@simplenow.io',
+      'sarah.agent@simplenow.io',
+      'james.agent@simplenow.io',
+      'priya.agent@simplenow.io',
+      'viewer@simplenow.io',
+    ];
+    for (const email of demoEmails) {
+      await this.userRepo.update({ email }, { passwordHash: pwHash });
     }
   }
 
