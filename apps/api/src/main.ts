@@ -28,16 +28,9 @@ async function bootstrap() {
   // Compression
   app.use(compression());
 
-  // CORS
+  // CORS - allow all origins (open for demo deployment)
   app.enableCors({
-    origin: (origin, callback) => {
-      const allowed = [frontendUrl, 'http://localhost:3000', 'http://localhost:3001', ...extraOrigins];
-      if (!origin || allowed.includes(origin) || origin.endsWith('.railway.app')) {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS: origin ${origin} not allowed`));
-      }
-    },
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,

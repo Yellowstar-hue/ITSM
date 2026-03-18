@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { HealthController } from './common/health.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from './modules/auth/entities/user.entity';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -73,6 +74,9 @@ import { SeederModule } from './database/seeder.module';
       isGlobal: true,
       ttl: 300,
     }),
+
+    // Health check user repo
+    TypeOrmModule.forFeature([User]),
 
     // Feature modules
     AuthModule,
