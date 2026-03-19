@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
-import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -14,7 +14,6 @@ export class AuthService {
     @InjectRepository(User) private userRepository: Repository<User>,
     private jwtService: JwtService,
     private configService: ConfigService,
-    @InjectDataSource() private dataSource: DataSource,
   ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
@@ -101,10 +100,10 @@ export class AuthService {
       'priya.agent@simplenow.io',
       'viewer@simplenow.io',
     ];
-    // Raw SQL bypasses ALL TypeORM hooks - guaranteed to store exact hash
+    // Raw SQL via repository bypasses ALL TypeORM hooks - stores exact hash
     let updated = 0;
     for (const email of demoEmails) {
-      const result = await this.dataSource.query(
+      const result = await this.userRepository.query(
         `UPDATE users SET "passwordHash" = $1 WHERE email = $2`,
         [pwHash, email],
       );
