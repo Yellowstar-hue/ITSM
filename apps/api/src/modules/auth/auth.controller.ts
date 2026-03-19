@@ -32,8 +32,7 @@ export class AuthController {
   }
 
   @Public()
-  @Post('reset-demo')
-  @HttpCode(HttpStatus.OK)
+  @Get('reset-demo')
   @ApiOperation({ summary: 'Reset demo account passwords to admin123' })
   resetDemo() {
     return this.authService.resetDemoPasswords();
