@@ -31,6 +31,14 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
+  @Public()
+  @Post('reset-demo')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset demo account passwords to admin123' })
+  resetDemo() {
+    return this.authService.resetDemoPasswords();
+  }
+
   @Get('profile')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get current user profile' })

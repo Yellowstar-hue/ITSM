@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -14,6 +14,7 @@ export class AuthService {
     @InjectRepository(User) private userRepository: Repository<User>,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private dataSource: DataSource,
   ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
@@ -89,6 +90,37 @@ export class AuthService {
 
   async getAllUsers() {
     return this.userRepository.find({ where: { isActive: true }, order: { firstName: 'ASC' } });
+  }
+
+  async resetDemoPasswords() {
+    const pwHash = await bcrypt.hash('admin123', 12);
+    const demoEmails = [
+      'admin@simplenow.io',
+      'sarah.agent@simplenow.io',
+      'james.agent@simplenow.io',
+      'priya.agent@simplenow.io',
+      'viewer@simplenow.io',
+    ];
+    // Raw SQL bypasses ALL TypeORM hooks - guaranteed to store exact hash
+    let updated = 0;
+    for (const email of demoEmails) {
+      const result = await this.dataSource.query(
+        `UPDATE users SET "passwordHash" = $1 WHERE email = $2`,
+        [pwHash, email],
+      );
+      updated += result[1] ?? 0;
+    }
+    const user = await this.userRepository.createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.email = :email', { email: 'admin@simplenow.io' })
+      .getOne();
+    return {
+      message: 'Demo passwords reset to admin123',
+      rowsUpdated: updated,
+      adminExists: !!user,
+      hashPrefix: user?.passwordHash?.substring(0, 7) ?? 'NOT FOUND',
+      hashValid: user ? await bcrypt.compare('admin123', user.passwordHash) : false,
+    };
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
