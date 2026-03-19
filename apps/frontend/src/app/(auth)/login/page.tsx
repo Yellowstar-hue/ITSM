@@ -27,7 +27,11 @@ export default function LoginPage() {
       toast.success('Welcome back!')
       router.push('/dashboard')
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Invalid credentials')
+      if (!error.response) {
+        toast.error(`Cannot reach API server. Check NEXT_PUBLIC_API_URL env var. (${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'})`)
+      } else {
+        toast.error(error.response?.data?.message || 'Invalid credentials')
+      }
     }
   }
 
