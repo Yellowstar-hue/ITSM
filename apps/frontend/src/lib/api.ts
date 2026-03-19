@@ -1,6 +1,10 @@
 import axios from 'axios'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+// Use relative URL so requests go through Next.js rewrite proxy → backend
+// This avoids NEXT_PUBLIC_API_URL being baked in at build time as localhost:3001
+const API_URL = typeof window === 'undefined'
+  ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001')
+  : ''
 
 export const api = axios.create({
   baseURL: `${API_URL}/api`,
