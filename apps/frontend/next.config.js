@@ -10,13 +10,9 @@ const nextConfig = {
     domains: ['avatars.githubusercontent.com', 'ui-avatars.com'],
   },
   async rewrites() {
-    // BACKEND_URL is a server-only runtime env var (not baked at build time).
-    // NEXT_PUBLIC_API_URL is the fallback (may be baked in at build time).
-    // Set BACKEND_URL in Railway frontend service env vars to the API service URL.
-    const apiOrigin =
-      process.env.BACKEND_URL ||
-      process.env.NEXT_PUBLIC_API_URL ||
-      'https://simplenowapi-production.up.railway.app'
+    // API runs in the same container on port 3001.
+    // BACKEND_URL can override for standalone API deployments.
+    const apiOrigin = process.env.BACKEND_URL || 'http://localhost:3001'
     return [
       {
         source: '/api/:path*',

@@ -4,7 +4,10 @@ import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/store/auth.store';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || 'https://simplenowapi-production.up.railway.app';
+// Socket connects to the same origin — NestJS runs on port 3001 in the same container,
+// but the browser connects via the Next.js domain (port 3000 / Railway external port).
+// Socket.IO on NestJS needs to be reached directly — use window.location.origin at runtime.
+const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
 
 let globalSocket: Socket | null = null;
 

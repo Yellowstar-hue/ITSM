@@ -1,12 +1,9 @@
 import axios from 'axios'
 
-// Always call the API directly — CORS is open (origin: true) on the backend.
-// This avoids the Next.js server-side proxy which requires the frontend container
-// to reach the backend URL, adding an unreliable hop.
-const API_BASE = 'https://simplenowapi-production.up.railway.app/api'
-
+// Use relative URL — browser sends to /api/* which Next.js proxies to
+// localhost:3001 (NestJS API running in the same container).
 export const api = axios.create({
-  baseURL: API_BASE,
+  baseURL: '/api',
   headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
 })
