@@ -16,7 +16,7 @@ const nextConfig = {
     const apiOrigin =
       process.env.BACKEND_URL ||
       process.env.NEXT_PUBLIC_API_URL ||
-      'http://localhost:3001'
+      'https://simplenowapi-production.up.railway.app'
     return [
       {
         source: '/api/:path*',
