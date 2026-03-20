@@ -10,10 +10,17 @@ const nextConfig = {
     domains: ['avatars.githubusercontent.com', 'ui-avatars.com'],
   },
   async rewrites() {
+    // BACKEND_URL is a server-only runtime env var (not baked at build time).
+    // NEXT_PUBLIC_API_URL is the fallback (may be baked in at build time).
+    // Set BACKEND_URL in Railway frontend service env vars to the API service URL.
+    const apiOrigin =
+      process.env.BACKEND_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      'http://localhost:3001'
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/:path*`,
+        destination: `${apiOrigin}/api/:path*`,
       },
     ]
   },
