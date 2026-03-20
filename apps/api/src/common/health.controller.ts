@@ -26,7 +26,7 @@ export class HealthController {
       status: 'ok',
       timestamp: new Date().toISOString(),
       service: 'SimpleNow ITSM API',
-      version: '1.0.0',
+      version: '1.0.2',
       db: dbStatus,
       users: userCount,
     };

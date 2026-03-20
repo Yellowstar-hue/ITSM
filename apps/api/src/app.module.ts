@@ -49,6 +49,9 @@ import { SeederModule } from './database/seeder.module';
           retryAttempts: 15,
           retryDelay: 5000,
           connectTimeoutMS: 30000,
+          extra: {
+            statement_timeout: 15000, // 15s query timeout — prevents hanging on DB issues
+          },
         };
       },
       inject: [ConfigService],

@@ -92,34 +92,45 @@ export class AuthService {
   }
 
   async resetDemoPasswords() {
-    const pwHash = await bcrypt.hash('admin123', 12);
-    const demoEmails = [
-      'admin@simplenow.io',
-      'sarah.agent@simplenow.io',
-      'james.agent@simplenow.io',
-      'priya.agent@simplenow.io',
-      'viewer@simplenow.io',
-    ];
-    // Raw SQL via repository bypasses ALL TypeORM hooks - stores exact hash
-    let updated = 0;
-    for (const email of demoEmails) {
+    try {
+      const pwHash = await bcrypt.hash('admin123', 12);
+      const demoEmails = [
+        'admin@simplenow.io',
+        'sarah.agent@simplenow.io',
+        'james.agent@simplenow.io',
+        'priya.agent@simplenow.io',
+        'viewer@simplenow.io',
+      ];
+      // Single bulk UPDATE — bypasses ALL TypeORM hooks, stores exact hash
+      const placeholders = demoEmails.map((_, i) => `$${i + 2}`).join(', ');
       const result = await this.userRepository.query(
-        `UPDATE users SET "passwordHash" = $1 WHERE email = $2`,
-        [pwHash, email],
+        `UPDATE users SET "passwordHash" = $1 WHERE email IN (${placeholders})`,
+        [pwHash, ...demoEmails],
       );
-      updated += result[1] ?? 0;
+      const rowsUpdated: number = result?.rowCount ?? result?.[1] ?? 0;
+
+      const user = await this.userRepository.createQueryBuilder('user')
+        .addSelect('user.passwordHash')
+        .where('user.email = :email', { email: 'admin@simplenow.io' })
+        .getOne();
+
+      const hashValid = user ? await bcrypt.compare('admin123', user.passwordHash) : false;
+      return {
+        message: 'Demo passwords reset to admin123',
+        rowsUpdated,
+        adminExists: !!user,
+        hashPrefix: user?.passwordHash?.substring(0, 7) ?? 'NOT FOUND',
+        hashValid,
+      };
+    } catch (err) {
+      return {
+        message: 'Reset failed — check DB connection',
+        error: err?.message ?? String(err),
+        rowsUpdated: 0,
+        adminExists: false,
+        hashValid: false,
+      };
     }
-    const user = await this.userRepository.createQueryBuilder('user')
-      .addSelect('user.passwordHash')
-      .where('user.email = :email', { email: 'admin@simplenow.io' })
-      .getOne();
-    return {
-      message: 'Demo passwords reset to admin123',
-      rowsUpdated: updated,
-      adminExists: !!user,
-      hashPrefix: user?.passwordHash?.substring(0, 7) ?? 'NOT FOUND',
-      hashValid: user ? await bcrypt.compare('admin123', user.passwordHash) : false,
-    };
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
