@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/store/auth.store';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3001';
+const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || 'https://simplenowapi-production.up.railway.app';
 
 let globalSocket: Socket | null = null;
 

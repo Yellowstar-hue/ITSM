@@ -1,13 +1,12 @@
 import axios from 'axios'
 
-// Use relative URL so requests go through Next.js rewrite proxy → backend
-// This avoids NEXT_PUBLIC_API_URL being baked in at build time as localhost:3001
-const API_URL = typeof window === 'undefined'
-  ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001')
-  : ''
+// Always call the API directly — CORS is open (origin: true) on the backend.
+// This avoids the Next.js server-side proxy which requires the frontend container
+// to reach the backend URL, adding an unreliable hop.
+const API_BASE = 'https://simplenowapi-production.up.railway.app/api'
 
 export const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
 })
