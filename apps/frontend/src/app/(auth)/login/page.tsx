@@ -27,8 +27,9 @@ export default function LoginPage() {
       toast.success('Welcome back!')
       router.push('/dashboard')
     } catch (error: any) {
-      if (!error.response) {
-        toast.error(`Cannot reach API server. Check NEXT_PUBLIC_API_URL env var. (${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'})`)
+      const status = error.response?.status
+      if (!error.response || status === 502 || status === 503 || status === 504) {
+        toast.error('Cannot reach API server — set BACKEND_URL env var in Railway frontend service')
       } else {
         toast.error(error.response?.data?.message || 'Invalid credentials')
       }
