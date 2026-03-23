@@ -25,7 +25,7 @@ export class DashboardService {
     ] = await Promise.all([
       this.ticketRepository.count({ where: { type: TicketType.INCIDENT, status: TicketStatus.OPEN } }),
       this.ticketRepository.count({ where: { type: TicketType.INCIDENT, status: TicketStatus.IN_PROGRESS } }),
-      this.ticketRepository.count({ where: { status: TicketStatus.RESOLVED, resolvedAt: MoreThan(new Date(now.setHours(0,0,0,0))) } }),
+      this.ticketRepository.count({ where: { status: TicketStatus.RESOLVED, resolvedAt: MoreThan(new Date(new Date().setHours(0,0,0,0))) } }),
       this.ticketRepository.count({ where: { priority: TicketPriority.CRITICAL, status: In([TicketStatus.OPEN, TicketStatus.IN_PROGRESS]) } }),
       this.ticketRepository.count({ where: { status: In([TicketStatus.OPEN, TicketStatus.IN_PROGRESS]), slaBreachAt: MoreThan(new Date(0)) } }),
       this.ticketRepository.count({ where: { type: TicketType.SERVICE_REQUEST, status: In([TicketStatus.OPEN, TicketStatus.IN_PROGRESS]) } }),
