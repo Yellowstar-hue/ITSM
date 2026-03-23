@@ -28,10 +28,13 @@ export default function LoginPage() {
       router.push('/dashboard')
     } catch (error: any) {
       const status = error.response?.status
+      const msg = Array.isArray(error.response?.data?.message)
+        ? error.response.data.message.join(', ')
+        : error.response?.data?.message
       if (!error.response || status === 502 || status === 503 || status === 504) {
-        toast.error('Cannot reach API server — set BACKEND_URL env var in Railway frontend service')
+        toast.error(`API unreachable (HTTP ${status ?? 'no response'}) — check Railway logs`)
       } else {
-        toast.error(error.response?.data?.message || 'Invalid credentials')
+        toast.error(`[${status}] ${msg || error.message || 'Login failed'}`)
       }
     }
   }

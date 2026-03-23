@@ -41,16 +41,13 @@ export class SeederService implements OnApplicationBootstrap {
 
   private async resetDemoPasswords() {
     const pwHash = await bcrypt.hash('admin123', 12);
-    const demoEmails = [
-      'admin@simplenow.io',
-      'sarah.agent@simplenow.io',
-      'james.agent@simplenow.io',
-      'priya.agent@simplenow.io',
-      'viewer@simplenow.io',
-    ];
-    for (const email of demoEmails) {
-      await this.userRepo.update({ email }, { passwordHash: pwHash });
-    }
+    // Raw SQL — bypasses TypeORM ORM layer, entity hooks, and select:false column quirks
+    await this.userRepo.query(
+      `UPDATE users SET "passwordHash" = $1
+       WHERE email IN ('admin@simplenow.io','sarah.agent@simplenow.io','james.agent@simplenow.io','priya.agent@simplenow.io','viewer@simplenow.io')`,
+      [pwHash],
+    );
+    this.logger.log(`Demo passwords reset. Hash prefix: ${pwHash.substring(0, 7)}`);
   }
 
   private async seed() {

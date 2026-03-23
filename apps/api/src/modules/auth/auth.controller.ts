@@ -38,6 +38,13 @@ export class AuthController {
     return this.authService.resetDemoPasswords();
   }
 
+  @Public()
+  @Get('debug')
+  @ApiOperation({ summary: 'Debug: test admin login state without credentials' })
+  async debugAuth() {
+    return this.authService.debugAuth();
+  }
+
   @Get('profile')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get current user profile' })

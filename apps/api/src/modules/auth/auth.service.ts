@@ -17,18 +17,22 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    // Use QueryBuilder with addSelect to reliably fetch the select:false passwordHash column
-    const user = await this.userRepository
-      .createQueryBuilder('user')
-      .addSelect('user.passwordHash')
-      .where('user.email = :email', { email })
-      .andWhere('user.isActive = :isActive', { isActive: true })
-      .getOne();
-    if (!user) return null;
-    const isValid = await bcrypt.compare(password, user.passwordHash);
+    // Raw SQL to bypass TypeORM select:false and any ORM quirks
+    const rows = await this.userRepository.query(
+      `SELECT id, email, "firstName", "lastName", role, department, avatar, "isActive", "passwordHash"
+       FROM users WHERE email = $1 AND "isActive" = true LIMIT 1`,
+      [email],
+    );
+    if (!rows || rows.length === 0) return null;
+    const row = rows[0];
+    if (!row.passwordHash) return null;
+    const isValid = await bcrypt.compare(password, row.passwordHash);
     if (!isValid) return null;
-    await this.userRepository.update(user.id, { lastLoginAt: new Date() });
-    return user;
+    await this.userRepository.query(
+      `UPDATE users SET "lastLoginAt" = NOW() WHERE id = $1`,
+      [row.id],
+    );
+    return row as User;
   }
 
   async login(loginDto: LoginDto) {
@@ -130,6 +134,32 @@ export class AuthService {
         adminExists: false,
         hashValid: false,
       };
+    }
+  }
+
+  async debugAuth() {
+    try {
+      const rows = await this.userRepository.query(
+        `SELECT id, email, "isActive", "passwordHash",
+                LEFT("passwordHash", 7) AS "hashPrefix",
+                LENGTH("passwordHash") AS "hashLen"
+         FROM users WHERE email = 'admin@simplenow.io' LIMIT 1`,
+      );
+      if (!rows || rows.length === 0) {
+        return { adminExists: false, userCount: await this.userRepository.query('SELECT COUNT(*) FROM users') };
+      }
+      const row = rows[0];
+      const hashValid = row.passwordHash ? await bcrypt.compare('admin123', row.passwordHash) : false;
+      return {
+        adminExists: true,
+        isActive: row.isActive,
+        hashPrefix: row.hashPrefix,
+        hashLen: row.hashLen,
+        hashValid,
+        verdict: hashValid ? 'LOGIN SHOULD WORK' : 'HASH MISMATCH — call /api/auth/reset-demo',
+      };
+    } catch (err) {
+      return { error: err?.message ?? String(err) };
     }
   }
 
