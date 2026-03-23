@@ -33,6 +33,7 @@ export class SeederService implements OnApplicationBootstrap {
       }
       this.logger.log('Empty database detected. Seeding demo data...');
       await this.seed();
+      await this.resetDemoPasswords();
       this.logger.log('Database seeded successfully!');
     } catch (err) {
       this.logger.error('Seeding failed:', err);
