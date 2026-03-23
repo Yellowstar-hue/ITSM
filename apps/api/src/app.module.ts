@@ -46,8 +46,8 @@ import { SeederModule } from './database/seeder.module';
           synchronize: true,
           logging: false,
           ssl: isRemote ? { rejectUnauthorized: false } : false,
-          retryAttempts: 15,
-          retryDelay: 5000,
+          retryAttempts: 5,
+          retryDelay: 3000,
           connectTimeoutMS: 30000,
           extra: {
             statement_timeout: 15000, // 15s query timeout — prevents hanging on DB issues

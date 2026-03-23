@@ -20,8 +20,8 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<User | null> {
     try {
-      // Explicit select overrides column-level select:false in TypeORM 0.3.x
-      const user = await this.userRepository.findOne({
+      // Primary: findOne with explicit select (overrides select:false in TypeORM 0.3.x)
+      let user = await this.userRepository.findOne({
         where: { email, isActive: true },
         select: {
           id: true, email: true, firstName: true, lastName: true,
@@ -29,9 +29,29 @@ export class AuthService {
           passwordHash: true,
         },
       });
-      if (!user || !user.passwordHash) return null;
+
+      // Fallback: if TypeORM didn't return passwordHash, query with raw SQL
+      // using the actual DB column name from TypeORM metadata
+      if (user && !user.passwordHash) {
+        this.logger.warn('findOne did not return passwordHash — falling back to raw query');
+        const meta = this.userRepository.metadata;
+        const col = meta.columns.find(c => c.propertyName === 'passwordHash');
+        const colName = col?.databaseName ?? 'passwordHash';
+        const rows = await this.userRepository.query(
+          `SELECT "${colName}" AS "passwordHash" FROM "users" WHERE "id" = $1 LIMIT 1`,
+          [user.id],
+        );
+        if (rows?.[0]) user.passwordHash = rows[0].passwordHash;
+      }
+
+      if (!user || !user.passwordHash) {
+        this.logger.warn(`validateUser: user not found or no passwordHash for ${email}`);
+        return null;
+      }
+
       const isValid = await bcrypt.compare(password, user.passwordHash);
       if (!isValid) return null;
+
       this.userRepository.update(user.id, { lastLoginAt: new Date() }).catch(() => {});
       return user;
     } catch (err) {

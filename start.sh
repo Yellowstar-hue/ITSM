@@ -1,46 +1,39 @@
 #!/bin/sh
 # ─────────────────────────────────────────────────────────────────────────────
-# start.sh — launches NestJS (port 3001) then Next.js (Railway PORT)
-# Waits for NestJS to be fully ready before starting Next.js so that the
-# first login attempt never hits a "connection refused" proxy 500.
+# start.sh — Launch NestJS (port 3001) then wait for it before Next.js starts.
+# Using wget (always in node:alpine via busybox) with -T for read timeout.
 # ─────────────────────────────────────────────────────────────────────────────
 
 # 1. Start NestJS on internal port 3001
 PORT=3001 node /app/api/dist/main &
 API_PID=$!
+echo "[start.sh] NestJS PID=$API_PID listening on :3001"
 
-echo "[start.sh] NestJS starting (PID $API_PID) on port 3001 ..."
-
-# 2. Wait up to 90 s for the health endpoint to respond
+# 2. Poll until NestJS health endpoint responds (max 120 s, 2 s between polls)
 WAIT=0
-MAX=90
+MAX=120
+READY=0
 while [ $WAIT -lt $MAX ]; do
-  # Use Node (always present) to make a quick HTTP check
-  if node -e "
-    const h = require('http');
-    h.get('http://localhost:3001/api/health', r => {
-      process.exit(r.statusCode >= 200 && r.statusCode < 500 ? 0 : 1);
-    }).on('error', () => process.exit(1));
-  " 2>/dev/null; then
-    echo "[start.sh] NestJS ready after ${WAIT}s."
+  # wget -T: read/connect timeout in seconds; -q: quiet; -O-: stdout (discard)
+  if wget -q -T 3 -O /dev/null http://localhost:3001/api/health/ping 2>/dev/null; then
+    echo "[start.sh] NestJS ready in ${WAIT}s"
+    READY=1
     break
   fi
-
-  # Also bail early if the background process already died
-  if ! kill -0 $API_PID 2>/dev/null; then
-    echo "[start.sh] WARNING: NestJS process exited unexpectedly."
+  # Abort wait if NestJS process died
+  if ! kill -0 "$API_PID" 2>/dev/null; then
+    echo "[start.sh] NestJS process exited (PID $API_PID gone)"
     break
   fi
-
   sleep 2
   WAIT=$((WAIT + 2))
-  echo "[start.sh] Waiting for NestJS... ${WAIT}/${MAX}s"
+  echo "[start.sh] Waiting for NestJS ... ${WAIT}/${MAX}s"
 done
 
-if [ $WAIT -ge $MAX ]; then
-  echo "[start.sh] WARNING: NestJS not ready after ${MAX}s — starting Next.js anyway."
+if [ "$READY" -eq 0 ]; then
+  echo "[start.sh] WARNING: NestJS not ready after ${MAX}s — Next.js will start anyway"
 fi
 
-# 3. Start Next.js on Railway's PORT (injected by Railway as $PORT)
-echo "[start.sh] Starting Next.js on port ${PORT:-3000} ..."
+# 3. Start Next.js on Railway's injected PORT (falls back to 3000)
+echo "[start.sh] Starting Next.js on port ${PORT:-3000}"
 exec /app/node_modules/.bin/next start apps/frontend -p ${PORT:-3000}

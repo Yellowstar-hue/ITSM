@@ -93,6 +93,12 @@ async function bootstrap() {
   logger.log(`Application running on http://0.0.0.0:${port}`);
   logger.log(`Swagger docs at http://localhost:${port}/api/docs`);
   logger.log(`Environment: ${nodeEnv}`);
+  const dbUrl = configService.get<string>('DATABASE_URL', '');
+  if (!dbUrl || dbUrl.includes('localhost')) {
+    logger.warn('DATABASE_URL is not set or uses localhost — set it in Railway to link your PostgreSQL service!');
+  } else {
+    logger.log(`Database: ${dbUrl.replace(/:([^:@]+)@/, ':***@')}`);
+  }
 }
 
 bootstrap().catch((err) => {
