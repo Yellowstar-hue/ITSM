@@ -4,19 +4,32 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import Link from 'next/link'
-import { Plus, Search, BookOpen, ThumbsUp, Eye, Bot, Sparkles } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { Plus, Search, BookOpen, ThumbsUp, Eye, Sparkles, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatRelativeTime } from '@/lib/utils'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
+
+const CATEGORIES = ['Network', 'Hardware', 'Security', 'Email & Collaboration', 'Infrastructure', 'Onboarding', 'Application', 'Access Management', 'Cloud Services', 'Other']
+
+interface ArticleForm {
+  title: string
+  summary: string
+  content: string
+  category: string
+  tags: string
+}
 
 export default function KnowledgePage() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
+  const [showCreate, setShowCreate] = useState(false)
   const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
@@ -29,6 +42,28 @@ export default function KnowledgePage() {
     queryFn: () => api.get('/knowledge/categories').then(r => r.data),
   })
 
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<ArticleForm>()
+  const selectedCategory = watch('category')
+
+  const createMutation = useMutation({
+    mutationFn: (data: ArticleForm) => api.post('/knowledge', {
+      title: data.title,
+      summary: data.summary,
+      content: data.content,
+      category: data.category,
+      tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      status: 'published',
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['knowledge'] })
+      queryClient.invalidateQueries({ queryKey: ['knowledge-categories'] })
+      toast.success('Article created')
+      setShowCreate(false)
+      reset()
+    },
+    onError: () => toast.error('Failed to create article'),
+  })
+
   const articles = data?.items || []
 
   return (
@@ -39,20 +74,19 @@ export default function KnowledgePage() {
           <p className="text-muted-foreground text-sm">{data?.total || 0} articles</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5">
+          <Button variant="outline" size="sm" className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
+            onClick={() => toast.info('AI article generation coming soon')}>
             <Sparkles className="w-3.5 h-3.5" />AI Generate
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={() => setShowCreate(true)}>
             <Plus className="w-4 h-4 mr-1.5" />New Article
           </Button>
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search knowledge base..." value={search} onChange={e => setSearch(e.target.value)} className="pl-8" />
-        </div>
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input placeholder="Search knowledge base..." value={search} onChange={e => setSearch(e.target.value)} className="pl-8" />
       </div>
 
       {/* Category filter */}
@@ -111,6 +145,54 @@ export default function KnowledgePage() {
           )}
         </div>
       )}
+
+      {/* Create Article Dialog */}
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>New Knowledge Article</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(d => createMutation.mutate(d))} className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Title *</label>
+              <Input placeholder="Article title..." {...register('title', { required: true })} />
+              {errors.title && <p className="text-xs text-destructive">Title is required</p>}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Summary</label>
+              <Input placeholder="Brief one-line summary..." {...register('summary')} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Category *</label>
+              <Select onValueChange={v => setValue('category', v)} value={selectedCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Content *</label>
+              <textarea
+                placeholder="Write the article content here... Markdown supported."
+                className="w-full min-h-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+                {...register('content', { required: true })}
+              />
+              {errors.content && <p className="text-xs text-destructive">Content is required</p>}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Tags</label>
+              <Input placeholder="tag1, tag2, tag3 (comma separated)" {...register('tags')} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setShowCreate(false); reset() }}>Cancel</Button>
+              <Button type="submit" loading={createMutation.isPending}>Create Article</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

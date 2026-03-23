@@ -12,6 +12,17 @@ import {
   LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, Legend
 } from 'recharts'
 
+function exportCSV(data: any[], filename: string) {
+  if (!data?.length) return
+  const keys = Object.keys(data[0])
+  const rows = [keys.join(','), ...data.map(row => keys.map(k => JSON.stringify(row[k] ?? '')).join(','))]
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
+
 export default function ReportsPage() {
   const { data: sla, isLoading: slaLoading } = useQuery({
     queryKey: ['reports', 'sla'],
@@ -30,6 +41,12 @@ export default function ReportsPage() {
 
   const CAT_COLORS = ['#7c3aed', '#3b82f6', '#10b981', '#f97316', '#ef4444', '#eab308', '#8b5cf6', '#06b6d4']
 
+  const handleExport = () => {
+    if (trend?.length) exportCSV(trend, `incident-trend-${new Date().toISOString().split('T')[0]}.csv`)
+    if (categories?.length) exportCSV(categories, `categories-${new Date().toISOString().split('T')[0]}.csv`)
+    if (sla) exportCSV([sla], `sla-summary-${new Date().toISOString().split('T')[0]}.csv`)
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -37,8 +54,8 @@ export default function ReportsPage() {
           <h1 className="text-2xl font-bold">Reports & Analytics</h1>
           <p className="text-muted-foreground text-sm">AI-powered insights for IT operations</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5">
-          <Download className="w-4 h-4" />Export
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
+          <Download className="w-4 h-4" />Export CSV
         </Button>
       </div>
 

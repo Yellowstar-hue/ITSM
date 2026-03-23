@@ -19,22 +19,23 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    // Use TypeORM QueryBuilder with addSelect to bypass select:false
     try {
-      const user = await this.userRepository
-        .createQueryBuilder('u')
-        .addSelect('u.passwordHash')
-        .where('u.email = :email', { email })
-        .andWhere('u.isActive = :active', { active: true })
-        .getOne();
+      // Explicit select overrides column-level select:false in TypeORM 0.3.x
+      const user = await this.userRepository.findOne({
+        where: { email, isActive: true },
+        select: {
+          id: true, email: true, firstName: true, lastName: true,
+          role: true, department: true, avatar: true, isActive: true,
+          passwordHash: true,
+        },
+      });
       if (!user || !user.passwordHash) return null;
       const isValid = await bcrypt.compare(password, user.passwordHash);
       if (!isValid) return null;
-      // Update last login (fire and forget — don't block auth on this)
       this.userRepository.update(user.id, { lastLoginAt: new Date() }).catch(() => {});
       return user;
     } catch (err) {
-      this.logger.error('validateUser failed: ' + (err?.message ?? String(err)));
+      this.logger.error('validateUser error: ' + (err?.message ?? String(err)));
       return null;
     }
   }
@@ -85,7 +86,10 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, department: true, title: true, phone: true, avatar: true, timezone: true, isActive: true, preferences: true, lastLoginAt: true, createdAt: true, updatedAt: true },
+    });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
@@ -96,7 +100,11 @@ export class AuthService {
   }
 
   async getAllUsers() {
-    return this.userRepository.find({ where: { isActive: true }, order: { firstName: 'ASC' } });
+    return this.userRepository.find({
+      where: { isActive: true },
+      order: { firstName: 'ASC' },
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, department: true, avatar: true, isActive: true },
+    });
   }
 
   async resetDemoPasswords() {

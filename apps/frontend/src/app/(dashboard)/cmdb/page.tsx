@@ -1,28 +1,41 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
 import api from '@/lib/api'
 import { Server, Plus, Search, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatRelativeTime } from '@/lib/utils'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 
 const STATUS_COLORS: Record<string, any> = {
   operational: 'resolved', degraded: 'high', offline: 'critical', maintenance: 'pending', decommissioned: 'closed'
 }
-
 const TYPE_ICONS: Record<string, string> = {
-  server: '🖥️', database: '🗄️', application: '📱', network_device: '🔌', storage: '💾', virtual_machine: '☁️', container: '📦', service: '⚙️', endpoint: '💻', other: '📦'
+  server: '🖥️', database: '🗄️', application: '📱', network_device: '🔌', storage: '💾',
+  virtual_machine: '☁️', container: '📦', service: '⚙️', endpoint: '💻', other: '📦'
+}
+const CI_TYPES = ['server', 'database', 'application', 'network_device', 'storage', 'virtual_machine', 'container', 'service', 'endpoint', 'other']
+const CI_STATUSES = ['operational', 'degraded', 'offline', 'maintenance', 'decommissioned']
+const ENVIRONMENTS = ['production', 'staging', 'development', 'test']
+
+interface CIForm {
+  name: string; ciType: string; status: string; environment: string
+  hostname: string; ipAddress: string; businessService: string; department: string; tags: string
 }
 
 export default function CmdbPage() {
   const [search, setSearch] = useState('')
   const [ciType, setCiType] = useState('')
+  const [showCreate, setShowCreate] = useState(false)
+  const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
     queryKey: ['cmdb', { search, ciType }],
@@ -34,6 +47,28 @@ export default function CmdbPage() {
     queryFn: () => api.get('/cmdb/stats').then(r => r.data),
   })
 
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CIForm>({
+    defaultValues: { status: 'operational', environment: 'production' }
+  })
+  const watchType = watch('ciType')
+  const watchStatus = watch('status')
+  const watchEnv = watch('environment')
+
+  const createMutation = useMutation({
+    mutationFn: (data: CIForm) => api.post('/cmdb', {
+      ...data,
+      tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cmdb'] })
+      queryClient.invalidateQueries({ queryKey: ['cmdb-stats'] })
+      toast.success('Configuration item created')
+      setShowCreate(false)
+      reset()
+    },
+    onError: () => toast.error('Failed to create CI'),
+  })
+
   const items = data?.items || []
 
   return (
@@ -43,7 +78,9 @@ export default function CmdbPage() {
           <h1 className="text-2xl font-bold">CMDB</h1>
           <p className="text-muted-foreground text-sm">Configuration Management Database — {data?.total || 0} items</p>
         </div>
-        <Button size="sm"><Plus className="w-4 h-4 mr-1.5" />Add CI</Button>
+        <Button size="sm" onClick={() => setShowCreate(true)}>
+          <Plus className="w-4 h-4 mr-1.5" />Add CI
+        </Button>
       </div>
 
       {/* Stats */}
@@ -67,7 +104,7 @@ export default function CmdbPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search CIs..." value={search} onChange={e => setSearch(e.target.value)} className="pl-8" />
@@ -113,8 +150,83 @@ export default function CmdbPage() {
               </Card>
             </motion.div>
           ))}
+          {items.length === 0 && (
+            <div className="col-span-3 py-16 text-center text-muted-foreground">
+              <Server className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p>No configuration items found</p>
+            </div>
+          )}
         </div>
       )}
+
+      {/* Create CI Dialog */}
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Configuration Item</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(d => createMutation.mutate(d))} className="space-y-4 mt-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5 col-span-2">
+                <label className="text-sm font-medium">Name *</label>
+                <Input placeholder="e.g. PROD-DB-03" {...register('name', { required: true })} />
+                {errors.name && <p className="text-xs text-destructive">Name is required</p>}
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Type *</label>
+                <Select onValueChange={v => setValue('ciType', v)} value={watchType}>
+                  <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
+                  <SelectContent>
+                    {CI_TYPES.map(t => <SelectItem key={t} value={t}>{t.replace('_', ' ')}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Status</label>
+                <Select onValueChange={v => setValue('status', v)} value={watchStatus}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CI_STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Environment</label>
+                <Select onValueChange={v => setValue('environment', v)} value={watchEnv}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ENVIRONMENTS.map(e => <SelectItem key={e} value={e} className="capitalize">{e}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Hostname</label>
+                <Input placeholder="hostname.internal" {...register('hostname')} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">IP Address</label>
+                <Input placeholder="10.0.1.10" {...register('ipAddress')} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Business Service</label>
+                <Input placeholder="Core Platform" {...register('businessService')} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Department</label>
+                <Input placeholder="Infrastructure" {...register('department')} />
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <label className="text-sm font-medium">Tags</label>
+                <Input placeholder="production, critical (comma separated)" {...register('tags')} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setShowCreate(false); reset() }}>Cancel</Button>
+              <Button type="submit" loading={createMutation.isPending}>Add CI</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
