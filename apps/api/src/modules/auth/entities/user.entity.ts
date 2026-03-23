@@ -1,6 +1,6 @@
 import {
   Entity, PrimaryGeneratedColumn, Column, CreateDateColumn,
-  UpdateDateColumn, BeforeInsert, BeforeUpdate
+  UpdateDateColumn, BeforeInsert
 } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 
@@ -66,7 +66,6 @@ export class User {
   }
 
   @BeforeInsert()
-  @BeforeUpdate()
   async hashPassword() {
     if (this.passwordHash && !this.passwordHash.startsWith('$2')) {
       this.passwordHash = await bcrypt.hash(this.passwordHash, 12);
