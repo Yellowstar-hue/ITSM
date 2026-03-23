@@ -42,12 +42,14 @@ export class SeederService implements OnApplicationBootstrap {
 
   private async resetDemoPasswords() {
     const pwHash = await bcrypt.hash('admin123', 12);
-    // Raw SQL — bypasses TypeORM ORM layer, entity hooks, and select:false column quirks
-    await this.userRepo.query(
-      `UPDATE users SET "passwordHash" = $1
-       WHERE email IN ('admin@simplenow.io','sarah.agent@simplenow.io','james.agent@simplenow.io','priya.agent@simplenow.io','viewer@simplenow.io')`,
-      [pwHash],
-    );
+    const demoEmails = ['admin@simplenow.io','sarah.agent@simplenow.io','james.agent@simplenow.io','priya.agent@simplenow.io','viewer@simplenow.io'];
+    // QueryBuilder UPDATE — TypeORM handles column name quoting (avoids raw SQL column name issues)
+    await this.userRepo
+      .createQueryBuilder()
+      .update(User)
+      .set({ passwordHash: pwHash })
+      .where('email IN (:...emails)', { emails: demoEmails })
+      .execute();
     this.logger.log(`Demo passwords reset. Hash prefix: ${pwHash.substring(0, 7)}`);
   }
 

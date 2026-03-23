@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -10,6 +10,8 @@ import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     private jwtService: JwtService,
@@ -17,22 +19,24 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    // Raw SQL to bypass TypeORM select:false and any ORM quirks
-    const rows = await this.userRepository.query(
-      `SELECT id, email, "firstName", "lastName", role, department, avatar, "isActive", "passwordHash"
-       FROM users WHERE email = $1 AND "isActive" = true LIMIT 1`,
-      [email],
-    );
-    if (!rows || rows.length === 0) return null;
-    const row = rows[0];
-    if (!row.passwordHash) return null;
-    const isValid = await bcrypt.compare(password, row.passwordHash);
-    if (!isValid) return null;
-    await this.userRepository.query(
-      `UPDATE users SET "lastLoginAt" = NOW() WHERE id = $1`,
-      [row.id],
-    );
-    return row as User;
+    // Use TypeORM QueryBuilder with addSelect to bypass select:false
+    try {
+      const user = await this.userRepository
+        .createQueryBuilder('u')
+        .addSelect('u.passwordHash')
+        .where('u.email = :email', { email })
+        .andWhere('u.isActive = :active', { active: true })
+        .getOne();
+      if (!user || !user.passwordHash) return null;
+      const isValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isValid) return null;
+      // Update last login (fire and forget — don't block auth on this)
+      this.userRepository.update(user.id, { lastLoginAt: new Date() }).catch(() => {});
+      return user;
+    } catch (err) {
+      this.logger.error('validateUser failed: ' + (err?.message ?? String(err)));
+      return null;
+    }
   }
 
   async login(loginDto: LoginDto) {
@@ -105,20 +109,23 @@ export class AuthService {
         'priya.agent@simplenow.io',
         'viewer@simplenow.io',
       ];
-      // Single bulk UPDATE — bypasses ALL TypeORM hooks, stores exact hash
-      const placeholders = demoEmails.map((_, i) => `$${i + 2}`).join(', ');
-      const result = await this.userRepository.query(
-        `UPDATE users SET "passwordHash" = $1 WHERE email IN (${placeholders})`,
-        [pwHash, ...demoEmails],
-      );
-      const rowsUpdated: number = result?.rowCount ?? result?.[1] ?? 0;
+      // QueryBuilder UPDATE — TypeORM handles column name quoting
+      const result = await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set({ passwordHash: pwHash })
+        .where('email IN (:...emails)', { emails: demoEmails })
+        .execute();
 
-      const user = await this.userRepository.createQueryBuilder('user')
-        .addSelect('user.passwordHash')
-        .where('user.email = :email', { email: 'admin@simplenow.io' })
+      const rowsUpdated: number = result?.affected ?? 0;
+
+      const user = await this.userRepository
+        .createQueryBuilder('u')
+        .addSelect('u.passwordHash')
+        .where('u.email = :email', { email: 'admin@simplenow.io' })
         .getOne();
 
-      const hashValid = user ? await bcrypt.compare('admin123', user.passwordHash) : false;
+      const hashValid = user?.passwordHash ? await bcrypt.compare('admin123', user.passwordHash) : false;
       return {
         message: 'Demo passwords reset to admin123',
         rowsUpdated,
@@ -138,29 +145,45 @@ export class AuthService {
   }
 
   async debugAuth() {
+    const results: Record<string, any> = {};
+    // 1. Get actual column names from pg catalog
     try {
-      const rows = await this.userRepository.query(
-        `SELECT id, email, "isActive", "passwordHash",
-                LEFT("passwordHash", 7) AS "hashPrefix",
-                LENGTH("passwordHash") AS "hashLen"
-         FROM users WHERE email = 'admin@simplenow.io' LIMIT 1`,
+      const cols = await this.userRepository.query(
+        `SELECT column_name FROM information_schema.columns WHERE table_name = 'users' ORDER BY ordinal_position`,
       );
-      if (!rows || rows.length === 0) {
-        return { adminExists: false, userCount: await this.userRepository.query('SELECT COUNT(*) FROM users') };
-      }
-      const row = rows[0];
-      const hashValid = row.passwordHash ? await bcrypt.compare('admin123', row.passwordHash) : false;
-      return {
-        adminExists: true,
-        isActive: row.isActive,
-        hashPrefix: row.hashPrefix,
-        hashLen: row.hashLen,
-        hashValid,
-        verdict: hashValid ? 'LOGIN SHOULD WORK' : 'HASH MISMATCH — call /api/auth/reset-demo',
-      };
-    } catch (err) {
-      return { error: err?.message ?? String(err) };
+      results.tableColumns = cols.map((c: any) => c.column_name);
+    } catch (e) {
+      results.tableColumnsError = e?.message;
     }
+    // 2. Count users
+    try {
+      const cnt = await this.userRepository.query(`SELECT COUNT(*) AS cnt FROM users`);
+      results.userCount = parseInt(cnt[0].cnt, 10);
+    } catch (e) {
+      results.userCountError = e?.message;
+    }
+    // 3. QueryBuilder fetch admin
+    try {
+      const user = await this.userRepository
+        .createQueryBuilder('u')
+        .addSelect('u.passwordHash')
+        .where('u.email = :email', { email: 'admin@simplenow.io' })
+        .getOne();
+      if (!user) {
+        results.adminExists = false;
+      } else {
+        const hashValid = user.passwordHash ? await bcrypt.compare('admin123', user.passwordHash) : false;
+        results.adminExists = true;
+        results.isActive = user.isActive;
+        results.hashPrefix = user.passwordHash?.substring(0, 7) ?? 'MISSING';
+        results.hashLen = user.passwordHash?.length ?? 0;
+        results.hashValid = hashValid;
+        results.verdict = hashValid ? 'LOGIN SHOULD WORK' : 'HASH MISMATCH — call /api/auth/reset-demo';
+      }
+    } catch (e) {
+      results.queryBuilderError = e?.message;
+    }
+    return results;
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
