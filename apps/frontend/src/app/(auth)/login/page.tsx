@@ -19,7 +19,11 @@ async function checkApiHealth(): Promise<'up' | 'down'> {
   try {
     // When NEXT_PUBLIC_API_URL is set (separate Railway service), call directly.
     // Otherwise hit the Next.js proxy which forwards to the same-container NestJS.
-    const base = process.env.NEXT_PUBLIC_API_URL || ''
+    const base =
+      process.env.NEXT_PUBLIC_API_URL ||
+      (process.env.NODE_ENV === 'production'
+        ? 'https://simplenowapi-production.up.railway.app'
+        : '')
     const res = await fetch(`${base}/api/health/ping`, { cache: 'no-store' })
     return res.ok ? 'up' : 'down'
   } catch {

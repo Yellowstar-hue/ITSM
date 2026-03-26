@@ -2,9 +2,12 @@ import axios from 'axios'
 
 // When NEXT_PUBLIC_API_URL is set (separate API service on Railway),
 // call the API directly. Otherwise fall back to the Next.js proxy (/api/*).
-const baseURL = process.env.NEXT_PUBLIC_API_URL
-  ? `${process.env.NEXT_PUBLIC_API_URL}/api`
-  : '/api'
+const baseURL =
+  process.env.NEXT_PUBLIC_API_URL
+    ? `${process.env.NEXT_PUBLIC_API_URL}/api`
+    : process.env.NODE_ENV === 'production'
+    ? 'https://simplenowapi-production.up.railway.app/api'
+    : '/api'
 
 export const api = axios.create({
   baseURL,

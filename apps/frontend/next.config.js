@@ -10,10 +10,13 @@ const nextConfig = {
     domains: ['avatars.githubusercontent.com', 'ui-avatars.com'],
   },
   async rewrites() {
-    // BACKEND_URL: runtime override (set in Railway frontend service variables).
-    // NEXT_PUBLIC_API_URL: also works as fallback (declared as ARG in Dockerfile).
-    // Default: same-container NestJS on port 3001 (local dev / combined deployment).
-    const apiOrigin = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    // Priority: explicit override → production default → local dev fallback
+    const apiOrigin =
+      process.env.BACKEND_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      (process.env.NODE_ENV === 'production'
+        ? 'https://simplenowapi-production.up.railway.app'
+        : 'http://localhost:3001')
     return [
       {
         source: '/api/:path*',
