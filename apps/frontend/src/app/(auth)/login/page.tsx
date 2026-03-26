@@ -17,8 +17,10 @@ interface LoginForm {
 
 async function checkApiHealth(): Promise<'up' | 'down'> {
   try {
-    // Use /api/health/ping which proxies to NestJS (not the Next.js route handler at /api/health)
-    const res = await fetch('/api/health/ping', { cache: 'no-store' })
+    // When NEXT_PUBLIC_API_URL is set (separate Railway service), call directly.
+    // Otherwise hit the Next.js proxy which forwards to the same-container NestJS.
+    const base = process.env.NEXT_PUBLIC_API_URL || ''
+    const res = await fetch(`${base}/api/health/ping`, { cache: 'no-store' })
     return res.ok ? 'up' : 'down'
   } catch {
     return 'down'

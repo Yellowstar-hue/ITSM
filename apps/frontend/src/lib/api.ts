@@ -1,9 +1,13 @@
 import axios from 'axios'
 
-// Use relative URL — browser sends to /api/* which Next.js proxies to
-// localhost:3001 (NestJS API running in the same container).
+// When NEXT_PUBLIC_API_URL is set (separate API service on Railway),
+// call the API directly. Otherwise fall back to the Next.js proxy (/api/*).
+const baseURL = process.env.NEXT_PUBLIC_API_URL
+  ? `${process.env.NEXT_PUBLIC_API_URL}/api`
+  : '/api'
+
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
 })
