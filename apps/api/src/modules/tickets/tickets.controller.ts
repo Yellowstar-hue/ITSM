@@ -7,6 +7,7 @@ import { TicketsService } from './tickets.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../auth/entities/user.entity';
 import { TicketType, TicketStatus, TicketPriority } from './entities/ticket.entity';
@@ -119,5 +120,24 @@ export class TicketsController {
   @ApiOperation({ summary: 'Bulk update tickets' })
   bulkUpdate(@Body() body: { ids: string[]; updates: any }, @CurrentUser() user: User) {
     return this.ticketsService.bulkUpdate(body.ids, body.updates, user.id);
+  }
+
+  // ── Public guest endpoints (no auth required) ─────────────────────────────
+
+  @Public()
+  @Post('guest/analyze')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'AI-analyse a guest ticket description (no ticket created)' })
+  analyzeGuest(@Body() body: { title: string; description: string }) {
+    return this.ticketsService.analyzeGuest(body.title, body.description);
+  }
+
+  @Public()
+  @Post('guest')
+  @ApiOperation({ summary: 'Create a ticket on behalf of an unauthenticated employee' })
+  createGuest(
+    @Body() body: { reporterName: string; reporterEmail: string; title: string; description: string },
+  ) {
+    return this.ticketsService.createGuest(body);
   }
 }

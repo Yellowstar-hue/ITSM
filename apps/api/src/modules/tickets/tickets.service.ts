@@ -89,6 +89,53 @@ export class TicketsService {
     return saved;
   }
 
+  /** Public — analyse a guest ticket description with AI (no ticket created). */
+  async analyzeGuest(title: string, description: string) {
+    return this.aiService.triageTicket({ title, description, type: 'incident' });
+  }
+
+  /** Public — create a ticket on behalf of an employee without a login. */
+  async createGuest(data: {
+    reporterName: string;
+    reporterEmail: string;
+    title: string;
+    description: string;
+  }) {
+    let triage: any = null;
+    try {
+      triage = await this.aiService.triageTicket({ title: data.title, description: data.description, type: 'incident' });
+    } catch { /* proceed without AI */ }
+
+    const priority = (triage?.priority as TicketPriority) || TicketPriority.MEDIUM;
+    const ticket = this.ticketRepository.create({
+      number: this.generateNumber(TicketType.INCIDENT),
+      type: TicketType.INCIDENT,
+      title: data.title,
+      description: `**Reported by:** ${data.reporterName} (${data.reporterEmail})\n\n${data.description}`,
+      status: TicketStatus.OPEN,
+      priority,
+      category: triage?.category,
+      slaBreachAt: this.calculateSlaBreachAt(priority, TicketType.INCIDENT),
+      aiSummary: triage?.summary,
+      aiCategory: triage?.category,
+      aiSentiment: triage?.sentiment,
+      aiSentimentScore: triage?.sentimentScore,
+      aiSuggestedPriority: triage?.priority,
+      tags: triage?.tags || [],
+      worklogs: [],
+      comments: [],
+      attachments: [],
+    });
+    const saved = await this.ticketRepository.save(ticket);
+    this.eventEmitter.emit('ticket.created', saved);
+    return {
+      ticketNumber: saved.number,
+      priority: saved.priority,
+      category: saved.category || 'General IT',
+      aiSummary: saved.aiSummary || `Issue reported by ${data.reporterName}.`,
+    };
+  }
+
   async findAll(query: {
     type?: TicketType;
     status?: TicketStatus;
