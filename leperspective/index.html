@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Le Perspective — Stuff people should probably know</title>
+  <meta name="description" content="Le Perspective Media. We cover AI, startups, business, tech, billion-dollar companies, million-dollar mistakes, and whatever weird thing happened on the internet today. No outrage. No hustle porn. Just stuff people should probably know." />
+  <meta name="theme-color" content="#0A0A0A" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Le Perspective — The news media sucks. So here's another one." />
+  <meta property="og:description" content="We cover AI, startups, business, tech, and whatever weird thing happened on the internet today. No outrage. No hustle porn. Just stuff people should probably know." />
+  <meta property="og:type" content="website" />
+
+  <link rel="icon" type="image/svg+xml" href="assets/monogram.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Scroll progress -->
+  <div class="progress" aria-hidden="true"><span class="progress__bar"></span></div>
+
+  <!-- Grain overlay -->
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- Custom cursor -->
+  <div class="cursor" aria-hidden="true"><span class="cursor__dot"></span></div>
+
+  <!-- Loader -->
+  <div class="loader" id="loader" aria-hidden="true">
+    <div class="loader__inner">
+      <svg class="mono loader__mark" viewBox="0 0 160 160" aria-hidden="true"><path d="M24 16h44c25 0 43 17.6 43 41.5 0 23.9-18 41.5-43 41.5H44V144H24V16zm20 22v39h22c13 0 22-8.4 22-19.5S79 38 66 38H44z"/><ellipse class="mono__dot" cx="120" cy="118" rx="20" ry="18"/></svg>
+      <div class="loader__count"><span id="loaderNum">0</span><em>%</em></div>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <header class="nav" id="nav">
+    <a href="#top" class="nav__brand" aria-label="Le Perspective home">
+      <svg class="mono nav__mark" viewBox="0 0 160 160" aria-hidden="true"><path d="M24 16h44c25 0 43 17.6 43 41.5 0 23.9-18 41.5-43 41.5H44V144H24V16zm20 22v39h22c13 0 22-8.4 22-19.5S79 38 66 38H44z"/><ellipse class="mono__dot" cx="120" cy="118" rx="20" ry="18"/></svg>
+      <span class="nav__name">Le&nbsp;Perspective</span>
+    </a>
+    <nav class="nav__links">
+      <a href="#story">The Story</a>
+      <a href="#cover">What We Cover</a>
+      <a href="#welcome">Welcome</a>
+    </nav>
+    <a class="nav__cta" href="https://www.linkedin.com/company/leperspective/" target="_blank" rel="noopener">
+      Follow <span aria-hidden="true">↗</span>
+    </a>
+  </header>
+
+  <main id="top">
+
+    <!-- HERO -->
+    <section class="hero" id="hero">
+      <div class="hero__kicker reveal">Le Perspective Media · Est. now-ish</div>
+      <h1 class="hero__title">
+        <span class="line"><span data-stagger>THE</span> <span data-stagger>NEWS</span></span>
+        <span class="line"><span data-stagger>MEDIA</span></span>
+        <span class="line outline"><span data-stagger>SUCKS.</span></span>
+      </h1>
+      <p class="hero__sub reveal">
+        Yeah, we're aware we're <em>literally</em> a news media company.
+        <br />So here's another one. <span class="dot"></span>
+      </p>
+      <div class="hero__scroll reveal" aria-hidden="true">
+        <span>Scroll</span>
+        <span class="hero__scroll-line"></span>
+      </div>
+      <div class="hero__marquee" aria-hidden="true">
+        <div class="marquee">
+          <div class="marquee__group">
+            <span>AI</span><i>·</i><span>Startups</span><i>·</i><span>Business</span><i>·</i><span>Tech</span><i>·</i><span>Billion-dollar companies</span><i>·</i><span>Million-dollar mistakes</span><i>·</i>
+          </div>
+          <div class="marquee__group">
+            <span>AI</span><i>·</i><span>Startups</span><i>·</i><span>Business</span><i>·</i><span>Tech</span><i>·</i><span>Billion-dollar companies</span><i>·</i><span>Million-dollar mistakes</span><i>·</i>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MANIFESTO -->
+    <section class="manifesto">
+      <p class="manifesto__lead">
+        <span class="rline">And yes, there are already</span>
+        <span class="rline"><strong class="hl">47,000</strong> newsletters, podcasts, YouTube</span>
+        <span class="rline">channels, LinkedIn thought leaders, AI</span>
+        <span class="rline">influencers, startup gurus, business experts,</span>
+        <span class="rline">and 19-year-olds explaining geopolitics</span>
+        <span class="rline">from their bedroom.</span>
+      </p>
+      <p class="manifesto__so reveal">So here's another one.</p>
+    </section>
+
+    <!-- STORY / EVOLUTION OF NEWS (horizontal pinned) -->
+    <section class="story" id="story">
+      <div class="story__intro">
+        <div class="section-tag reveal">The Story of News</div>
+        <h2 class="story__heading reveal">
+          How we went from <em>shouting around a fire</em><br />
+          to <em>doomscrolling at 2&nbsp;a.m.</em>
+        </h2>
+        <p class="story__note reveal">A very short history of how humans share what happened. Keep scrolling →</p>
+      </div>
+
+      <div class="pin" id="pin">
+        <div class="pin__track" id="track">
+
+          <article class="era" data-era="01">
+            <div class="era__index">01</div>
+            <div class="era__years">~40,000 BCE</div>
+            <h3 class="era__title">Oral Traditions</h3>
+            <p class="era__text">News was a story told out loud. Around fires, at markets, over walls. If you missed it, you missed it. The original "breaking" news broke and then disappeared into memory.</p>
+            <div class="era__tag">Range: shouting distance</div>
+            <div class="era__glyph">🔥</div>
+          </article>
+
+          <article class="era" data-era="02">
+            <div class="era__index">02</div>
+            <div class="era__years">~3,200 BCE</div>
+            <h3 class="era__title">Early Scribes</h3>
+            <p class="era__text">Then someone pressed a reed into wet clay and froze a fact in time. Scrolls, tablets, hand-copied manuscripts. Slow. Expensive. Read by maybe twelve people. Honestly, peak signal-to-noise.</p>
+            <div class="era__tag">Range: one careful courier</div>
+            <div class="era__glyph">📜</div>
+          </article>
+
+          <article class="era" data-era="03">
+            <div class="era__index">03</div>
+            <div class="era__years">1440</div>
+            <h3 class="era__title">The Print</h3>
+            <p class="era__text">Gutenberg hits "print" and the world never shuts up again. Pamphlets, papers, headlines. Suddenly the same fact lands in a thousand hands on the same morning. The first feed.</p>
+            <div class="era__tag">Range: a whole city</div>
+            <div class="era__glyph">🗞️</div>
+          </article>
+
+          <article class="era" data-era="04">
+            <div class="era__index">04</div>
+            <div class="era__years">1950s</div>
+            <h3 class="era__title">The TV</h3>
+            <p class="era__text">News got a face, a desk, and a dramatic theme song. The whole country watched the same thing at 9 p.m. and believed roughly the same things by 9:30. Reach: enormous. Nuance: optional.</p>
+            <div class="era__tag">Range: the living room</div>
+            <div class="era__glyph">📺</div>
+          </article>
+
+          <article class="era" data-era="05">
+            <div class="era__index">05</div>
+            <div class="era__years">Now</div>
+            <h3 class="era__title">Social Media</h3>
+            <p class="era__text">Everyone's a broadcaster. Everything is breaking. THIS CHANGES EVERYTHING, the future is here, every 17 minutes. Infinite reach, infinite outrage, infinite "thread 🧵". You are very tired.</p>
+            <div class="era__tag">Range: the entire planet, at once</div>
+            <div class="era__glyph">📱</div>
+          </article>
+
+          <article class="era era--final" data-era="06">
+            <div class="era__index">06</div>
+            <div class="era__years">Today, ~1 min</div>
+            <h3 class="era__title">Le Perspective</h3>
+            <p class="era__text">So here we are. No outrage. No hustle porn. No "THIS CHANGES EVERYTHING." Just the stuff people should probably know — read in a minute, sound like you researched for an hour.</p>
+            <div class="era__tag">Range: you, and your group chat</div>
+            <div class="era__glyph era__glyph--mark"><svg class="mono" viewBox="0 0 160 160" role="img" aria-label="Le Perspective"><path d="M24 16h44c25 0 43 17.6 43 41.5 0 23.9-18 41.5-43 41.5H44V144H24V16zm20 22v39h22c13 0 22-8.4 22-19.5S79 38 66 38H44z"/><ellipse class="mono__dot" cx="120" cy="118" rx="20" ry="18"/></svg></div>
+          </article>
+
+        </div>
+        <div class="pin__progress" aria-hidden="true"><span class="pin__progress-bar" id="pinBar"></span></div>
+        <div class="pin__hint" aria-hidden="true">Oral fire → Le Perspective</div>
+      </div>
+    </section>
+
+    <!-- WHAT WE COVER -->
+    <section class="cover" id="cover">
+      <div class="section-tag reveal">What We Cover</div>
+      <h2 class="cover__heading reveal">Everything that matters,<br />and a lot that just <em>amuses</em> us.</h2>
+      <ul class="cover__grid">
+        <li class="cover__item reveal"><span class="cover__no">01</span><h3>AI</h3><p>The good, the hyped, and the thing that raised $500M in the last 10 minutes.</p></li>
+        <li class="cover__item reveal"><span class="cover__no">02</span><h3>Startups</h3><p>From garage to unicorn to cautionary tale, often in that order.</p></li>
+        <li class="cover__item reveal"><span class="cover__no">03</span><h3>Business</h3><p>Who's winning, who's bluffing, and who quietly changed their pricing page.</p></li>
+        <li class="cover__item reveal"><span class="cover__no">04</span><h3>Tech</h3><p>The tools, the launches, the features nobody asked for but everyone shipped.</p></li>
+        <li class="cover__item reveal"><span class="cover__no">05</span><h3>Billion-dollar companies</h3><p>And the very normal, totally reasonable decisions that built them.</p></li>
+        <li class="cover__item reveal"><span class="cover__no">06</span><h3>Million-dollar mistakes</h3><p>Our favorite genre. Educational. Cathartic. Occasionally hilarious.</p></li>
+        <li class="cover__item cover__item--wide reveal"><span class="cover__no">07</span><h3>…and whatever weird thing happened on the internet today</h3><p>Because something always did.</p></li>
+      </ul>
+    </section>
+
+    <!-- THE RULES (negatives) -->
+    <section class="rules">
+      <div class="section-tag section-tag--light reveal">The House Rules</div>
+      <ul class="rules__list">
+        <li class="rule"><span class="rule__no">No</span><span class="rule__what">outrage.</span></li>
+        <li class="rule"><span class="rule__no">No</span><span class="rule__what">fake hustle porn.</span></li>
+        <li class="rule"><span class="rule__no">No</span><span class="rule__what">"THIS CHANGES EVERYTHING" headlines.</span></li>
+        <li class="rule"><span class="rule__no">No</span><span class="rule__what">"the future is here" every 17 minutes.</span></li>
+      </ul>
+      <p class="rules__just reveal">Just stuff people should <span class="hl-line">probably</span> know.</p>
+    </section>
+
+    <!-- WELCOME -->
+    <section class="welcome" id="welcome">
+      <h2 class="welcome__heading reveal">Come as you are.</h2>
+      <div class="welcome__cards">
+        <div class="wcard reveal"><div class="wcard__iq">High IQ?</div><div class="wcard__yes">Welcome.</div></div>
+        <div class="wcard reveal"><div class="wcard__iq">High EQ?</div><div class="wcard__yes">Welcome.</div></div>
+        <div class="wcard wcard--accent reveal"><div class="wcard__iq">Neither?</div><div class="wcard__yes">Also welcome.</div></div>
+      </div>
+      <p class="welcome__truth reveal">
+        We're a media company. <span>We need the traffic.</span>
+      </p>
+      <div class="welcome__deal reveal">
+        <div class="deal">
+          <span class="deal__a">Read for a minute.</span>
+          <span class="deal__arrow" aria-hidden="true">→</span>
+          <span class="deal__b">Pretend you researched for an hour.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SIGN OFF / FOOTER -->
+    <footer class="signoff" id="signoff">
+      <div class="signoff__big">
+        <span class="line">See you</span>
+        <span class="line outline">tomorrow.</span>
+      </div>
+      <p class="signoff__unless reveal">
+        Unless another AI startup raises <strong>$500&nbsp;million</strong> in the next 10 minutes.
+        <br />In that case — see you sooner.
+      </p>
+
+      <div class="signoff__bar">
+        <a class="signoff__follow" href="https://www.linkedin.com/company/leperspective/" target="_blank" rel="noopener">
+          <span>Follow on LinkedIn</span><span aria-hidden="true">↗</span>
+        </a>
+        <div class="signoff__nocontact">
+          There is no contact us. <span>(Lol)</span> Bye.
+        </div>
+      </div>
+
+      <div class="signoff__brand">
+        <svg class="mono" viewBox="0 0 160 160" aria-hidden="true"><path d="M24 16h44c25 0 43 17.6 43 41.5 0 23.9-18 41.5-43 41.5H44V144H24V16zm20 22v39h22c13 0 22-8.4 22-19.5S79 38 66 38H44z"/><ellipse class="mono__dot" cx="120" cy="118" rx="20" ry="18"/></svg>
+        <span>Le Perspective</span>
+      </div>
+      <div class="signoff__fine">© <span id="year">2026</span> Le Perspective Media · Built to be read in a minute.</div>
+    </footer>
+
+  </main>
+
+  <button class="totop" id="totop" aria-label="Back to top">↑</button>
+
+  <script src="script.js"></script>
+</body>
+</html>

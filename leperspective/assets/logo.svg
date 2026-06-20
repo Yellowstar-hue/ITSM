@@ -1,0 +1,10 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Le Perspective">
+  <rect width="512" height="512" rx="0" fill="#FFFFFF"/>
+  <!-- P letter -->
+  <path d="M120 76h128c70.7 0 122 50.2 122 118 0 67.8-51.3 118-122 118h-58v112h-70V76zm70 64v108h54c33.1 0 56-22.4 56-54 0-31.6-22.9-54-56-54h-54z" fill="#0A0A0A"/>
+  <!-- lime dot -->
+  <ellipse cx="360" cy="356" rx="46" ry="42" fill="#C5F94E"/>
+  <!-- bottom bar -->
+  <rect y="430" width="512" height="82" fill="#0A0A0A"/>
+  <text x="256" y="485" font-family="'Helvetica Neue', Arial, sans-serif" font-size="46" font-weight="400" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">Le Perspective</text>
+</svg>
